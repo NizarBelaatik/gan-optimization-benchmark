@@ -25,7 +25,8 @@ class Config:
         'samples': base_dir/"samples",
         'checkpoints': base_dir/"checkpoints", 
         'metrics': base_dir/"metrics",
-        'logs': base_dir/"logs"
+        'logs': base_dir/"logs",
+        'real_images':base_dir/"real_images"
     }
     
     @property
