@@ -34,7 +34,7 @@ def save_checkpoint(epoch, G, D, opt_G, opt_D, optimizer_name, losses):
     ensure_dir(config.dirs['checkpoints'])
     checkpoint_path = os.path.join(
         config.dirs['checkpoints'],
-        f"{optimizer_name}_epoch{epoch:04d}.pth"
+        f"{optimizer_name}_checkpoint.pth"  # Consistent naming
     )
     torch.save({
         'epoch': epoch,
@@ -50,7 +50,7 @@ def load_checkpoint(optimizer_name):
     """Load training checkpoint"""
     checkpoint_path = os.path.join(
         config.dirs['checkpoints'],
-        f"{optimizer_name}_checkpoint.pth"
+        f"{optimizer_name}_checkpoint.pth"  # Match this with save_checkpoint()
     )
     if os.path.exists(checkpoint_path):
         checkpoint = torch.load(checkpoint_path)

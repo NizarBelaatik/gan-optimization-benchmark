@@ -9,7 +9,7 @@ class Config:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     latent_dim = 100
     batch_size = 64
-    epochs = 100
+    epochs = 25
     lr_G = 0.0002
     lr_D = 0.0002
     gp_weight = 10  # Gradient penalty weight
