@@ -3,7 +3,7 @@ import torch.optim as optim
 from torchvision.utils import save_image
 import os
 from pathlib import Path
-from models import Generator, Discriminator
+from models import Generator, Discriminator,Lookahead
 from utils import (
     save_checkpoint, 
     load_checkpoint, 
@@ -37,7 +37,7 @@ def train_gan(optimizer_name, resume=False):
     opt_D = optim.Adam(D.parameters(), lr=config.lr_D, betas=(0.5, 0.999))
     
     if optimizer_name == 'Lookahead':
-        opt_G = optim.Lookahead(opt_G, k=5, alpha=0.5)
+        opt_G = Lookahead(opt_G, k=5, alpha=0.5)
 
     # Resume logic
     start_epoch = 0
@@ -58,54 +58,59 @@ def train_gan(optimizer_name, resume=False):
 
     # Training loop
     fixed_noise = torch.randn(64, config.latent_dim, 1, 1, device=device)
-    
-    for epoch in range(start_epoch, config.epochs):
-        for i, (real_imgs, _) in enumerate(dataloader):
-            real_imgs = real_imgs.to(device)
-            batch_size = real_imgs.size(0)
-            
-            # --- Discriminator Update ---
-            D.zero_grad()
-            
-            # Real images
-            real_pred = D(real_imgs)
-            real_loss = -real_pred.mean()
-            
-            # Fake images
-            noise = torch.randn(batch_size, config.latent_dim, 1, 1, device=device)
-            fake_imgs = G(noise).detach()
-            fake_pred = D(fake_imgs)
-            fake_loss = fake_pred.mean()
-            
-            # Gradient penalty
-            gp = gradient_penalty(D, real_imgs, fake_imgs, device)
-            
-            d_loss = real_loss + fake_loss + gp * config.gp_weight
-            d_loss.backward()
-            opt_D.step()
-            
-            # --- Generator Update ---
-            if i % config.n_critic == 0:
-                G.zero_grad()
-                gen_pred = D(G(noise))
-                g_loss = -gen_pred.mean()
-                g_loss.backward()
-                opt_G.step()
+    try:
+        for epoch in range(start_epoch, config.epochs):
+            for i, (real_imgs, _) in enumerate(dataloader):
+                real_imgs = real_imgs.to(device)
+                batch_size = real_imgs.size(0)
                 
-                losses['G_losses'].append(g_loss.item())
-            
-            losses['D_losses'].append(d_loss.item())
+                # --- Discriminator Update ---
+                D.zero_grad()
+                
+                # Real images
+                real_pred = D(real_imgs)
+                real_loss = -real_pred.mean()
+                
+                # Fake images
+                noise = torch.randn(batch_size, config.latent_dim, 1, 1, device=device)
+                fake_imgs = G(noise).detach()
+                fake_pred = D(fake_imgs)
+                fake_loss = fake_pred.mean()
+                
+                # Gradient penalty
+                gp = gradient_penalty(D, real_imgs, fake_imgs, device)
+                
+                d_loss = real_loss + fake_loss + gp * config.gp_weight
+                d_loss.backward()
+                opt_D.step()
+                
+                # --- Generator Update ---
+                if i % config.n_critic == 0:
+                    G.zero_grad()
+                    gen_pred = D(G(noise))
+                    g_loss = -gen_pred.mean()
+                    g_loss.backward()
+                    opt_G.step()
+                    
+                    losses['G_losses'].append(g_loss.item())
+                
+                losses['D_losses'].append(d_loss.item())
 
-        # --- Epoch End Processing ---
-        # Save samples
-        if epoch % config.sample_interval == 0:
-            save_samples(G, fixed_noise, optimizer_name, epoch)
-        
-        # Save checkpoint
-        save_checkpoint(epoch, G, D, opt_G, opt_D, optimizer_name, losses)
-        
-        print(f"[{optimizer_name}] Epoch {epoch+1}/{config.epochs} | "
-              f"G Loss: {g_loss.item():.4f} | D Loss: {d_loss.item():.4f}")
+            # --- Epoch End Processing ---
+            # Save samples
+            if epoch % config.sample_interval == 0:
+                save_samples(G, fixed_noise, optimizer_name, epoch)
+            
+            # Save checkpoint
+            save_checkpoint(epoch, G, D, opt_G, opt_D, optimizer_name, losses)
+            
+            print(f"[{optimizer_name}] Epoch {epoch+1}/{config.epochs} | "
+                f"G Loss: {g_loss.item():.4f} | D Loss: {d_loss.item():.4f}")
+    except KeyboardInterrupt:
+        print("\nInterrupt detected - saving checkpoint...")
+        save_checkpoint(epoch, G, D, opt_G, opt_D, 
+                      optimizer_name, losses)
+        return losses
     
     # Final save
     torch.save(G.state_dict(), os.path.join(config.dirs['models'], f"{optimizer_name}_G.pth"))

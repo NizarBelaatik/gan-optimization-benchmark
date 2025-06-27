@@ -32,37 +32,26 @@ def gradient_penalty(D, real, fake, device):
 def save_checkpoint(epoch, G, D, opt_G, opt_D, optimizer_name, losses):
     """Save training checkpoint"""
     ensure_dir(config.dirs['checkpoints'])
-    checkpoint_path = os.path.join(
-        config.dirs['checkpoints'],
-        f"{optimizer_name}_checkpoint.pth"  # Consistent naming
-    )
-    torch.save({
-        'epoch': epoch,
+    checkpoint = {
+        'epoch': epoch + 1,  # Save NEXT epoch to resume
         'G_state_dict': G.state_dict(),
         'D_state_dict': D.state_dict(),
         'opt_G_state_dict': opt_G.state_dict(),
         'opt_D_state_dict': opt_D.state_dict(),
         'G_losses': losses["G_losses"],
         'D_losses': losses["D_losses"]
-    }, checkpoint_path)
+    }
+    # Save as both specific and latest version
+    torch.save(checkpoint, 
+              os.path.join(config.dirs['checkpoints'], 
+                         f"{optimizer_name}_checkpoint.pth"))
 
 def load_checkpoint(optimizer_name):
     """Load training checkpoint"""
-    checkpoint_path = os.path.join(
-        config.dirs['checkpoints'],
-        f"{optimizer_name}_checkpoint.pth"  # Match this with save_checkpoint()
-    )
-    if os.path.exists(checkpoint_path):
-        checkpoint = torch.load(checkpoint_path)
-        return (
-            checkpoint['epoch'],
-            checkpoint['G_state_dict'],
-            checkpoint['D_state_dict'],
-            checkpoint['opt_G_state_dict'],
-            checkpoint['opt_D_state_dict'],
-            {'G_losses': checkpoint['G_losses'], 
-             'D_losses': checkpoint['D_losses']}
-        )
+    path = os.path.join(config.dirs['checkpoints'], 
+                       f"{optimizer_name}_checkpoint.pth")
+    if os.path.exists(path):
+        return torch.load(path)  # Return as dict
     return None
 
 def save_samples(G, noise, optimizer_name, epoch):

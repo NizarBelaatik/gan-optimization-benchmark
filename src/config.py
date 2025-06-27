@@ -1,6 +1,7 @@
 import torch
 from pathlib import Path
 import os
+import glob
 
 class Config:
     version = "1.0"  # Track code versions
@@ -9,7 +10,7 @@ class Config:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     latent_dim = 100
     batch_size = 64
-    epochs = 25
+    epochs = 15
     lr_G = 0.0002
     lr_D = 0.0002
     gp_weight = 10  # Gradient penalty weight
@@ -28,14 +29,18 @@ class Config:
     }
     
     @property
+    def resume2(self):
+        """Check for ANY optimizer's checkpoint"""
+        checkpoint_path = os.path.join(self.dirs['checkpoints'], "*_checkpoint.pth")
+        return len(glob.glob(checkpoint_path)) > 0
+    
+    @property
     def resume(self):
-        """Auto-detect if checkpoints exist for resuming"""
         checkpoint_dir = self.dirs['checkpoints']
-        # Check if any optimizer's checkpoint exists
-        for opt in ['Adam', 'RMSprop', 'SGD', 'Lookahead']:
-            if list(Path(checkpoint_dir).glob(f"{opt}_epoch*.pth")):
-                return True
-        return False
+        return any(
+            os.path.exists(os.path.join(checkpoint_dir, f"{opt}_checkpoint.pth"))
+            for opt in ['Adam', 'RMSprop', 'SGD', 'Lookahead']
+        )
     
     def __init__(self):
         # Create all directories
