@@ -16,10 +16,11 @@ class Config:
     gp_weight = 10  # Gradient penalty weight
     n_critic = 5    # Number of D updates per G update
     sample_interval = 5
+    checkpoint_interval = 5
     sample_dir = "samples"
     dataset = "cifar10"  # or "mnist" 
 
-    base_dir = Path("outputs")
+    base_dir = Path("outputs2")
     dirs = {
         'models': base_dir/"models",
         'samples': base_dir/"samples",

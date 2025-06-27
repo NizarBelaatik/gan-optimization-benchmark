@@ -13,6 +13,9 @@ from utils import (
 )
 from config import config
 from data import get_dataloader
+from utils import save_all_samples
+
+
 
 def train_gan(optimizer_name, resume=False):
     """Train GAN with specified optimizer"""
@@ -59,6 +62,7 @@ def train_gan(optimizer_name, resume=False):
     # Training loop
     fixed_noise = torch.randn(64, config.latent_dim, 1, 1, device=device)
     try:
+
         for epoch in range(start_epoch, config.epochs):
             for i, (real_imgs, _) in enumerate(dataloader):
                 real_imgs = real_imgs.to(device)
@@ -96,13 +100,20 @@ def train_gan(optimizer_name, resume=False):
                 
                 losses['D_losses'].append(d_loss.item())
 
-            # --- Epoch End Processing ---
-            # Save samples
-            if epoch % config.sample_interval == 0:
-                save_samples(G, fixed_noise, optimizer_name, epoch)
+                # --- Epoch End Processing ---
+                # Save samples
+                batch_idx = i
+                if batch_idx % config.sample_interval == 0:
+                    save_all_samples(G, fixed_noise, optimizer_name, epoch, batch_idx)
+                
+                # Save checkpoint
+                if epoch % config.checkpoint_interval == 0:
+                    save_checkpoint(epoch, G, D, opt_G, opt_D, optimizer_name, losses)
+
+            #if epoch % config.sample_interval == 0:save_samples(G, fixed_noise, optimizer_name, epoch)
             
             # Save checkpoint
-            save_checkpoint(epoch, G, D, opt_G, opt_D, optimizer_name, losses)
+            #save_checkpoint(epoch, G, D, opt_G, opt_D, optimizer_name, losses)
             
             print(f"[{optimizer_name}] Epoch {epoch+1}/{config.epochs} | "
                 f"G Loss: {g_loss.item():.4f} | D Loss: {d_loss.item():.4f}")

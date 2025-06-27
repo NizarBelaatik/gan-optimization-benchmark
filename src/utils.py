@@ -105,3 +105,18 @@ def save_results(results, optimizers):
             os.path.join(config.dirs['metrics'], f"{opt}_losses.png")
         )
         plt.close()
+
+
+
+def save_all_samples(G, noise, optimizer_name, epoch, batch_idx):
+    """Save all generated samples in optimizer-specific folders"""
+    samples_dir = os.path.join(config.dirs['samples'], optimizer_name)
+    os.makedirs(samples_dir, exist_ok=True)
+    
+    samples_path = os.path.join(
+        samples_dir,
+        f"epoch{epoch}_batch{batch_idx}.png"
+    )
+    with torch.no_grad():
+        samples = G(noise)
+        save_image(samples, samples_path, nrow=8, normalize=True)
