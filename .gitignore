@@ -9,3 +9,5 @@
 /venv/
 /data/
 /outputs2/
+
+/src/__pycache__/

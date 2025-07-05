@@ -1,72 +1,99 @@
-
 # GAN Optimization Benchmark: Adam vs. RMSprop vs. SGD vs. Lookahead
 
-![Generated Samples](outputs/samples/Adam_final.png)  
-*Example images generated after training with Adam optimizer*
 
 ## 📌 Overview
-This project compares the performance of four optimization algorithms (**Adam, RMSprop, SGD with momentum, and Lookahead**) in training Generative Adversarial Networks (GANs) on the CIFAR-10 dataset. Key metrics include:
-- **Frechet Inception Distance (FID) scores**
-- Training stability
-- Generated image quality
+
+This project benchmarks the performance of four optimization algorithms in training **Generative Adversarial Networks (GANs)** on the **CIFAR-10** dataset. The main focus of the comparison is on key metrics such as:
+
+* **Frechet Inception Distance (FID) Scores**
+* Training **stability** and convergence behavior
+* **Generated image quality** through visual inspection
+
+The optimization algorithms compared are:
+
+* **Adam**
+* **RMSprop**
+* **SGD with momentum**
+* **Lookahead**
 
 ## 🚀 Key Features
-- **WGAN-GP implementation** for stable training
-- **Auto-resume functionality** from checkpoints
-- **Four optimizers tested** with identical architectures
-- **Comprehensive metrics**: Loss curves, FID scores, and sample images
-- **Modular codebase** for easy extension
 
-## 📊 Results Summary
-| Optimizer | FID Score (Lower = Better) | Training Stability | Best Epoch |
-|-----------|---------------------------|--------------------|------------|
-| Adam      | 24.5                      | High               | 85         |
-| RMSprop   | 28.1                      | Medium             | 92         |
-| SGD       | 35.7                      | Low                | 100        |
-| Lookahead | **22.8**                  | **Highest**        | 78         |
+* **WGAN-GP Implementation**: Ensures stable training through gradient penalty.
+* **Auto-Resume from Checkpoints**: Training can be resumed from the last saved checkpoint.
+* **Comprehensive Optimizer Comparison**: All optimizers are tested on the same architecture under identical conditions.
+* **Extensive Metrics**: Includes loss curves, FID scores, and sample images for detailed analysis.
+* **Modular Codebase**: Easy to extend for additional optimizers, datasets, or analysis features.
+
 
 
 ## 🛠 Setup
+
+### 1. Clone the repository:
+
 ```bash
 git clone https://github.com/NizarBelaatik/gan-optimization-benchmark.git
 cd gan-optimization-benchmark
+```
+
+### 2. Install dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
+Ensure that you have **Python 3.x** installed along with **CUDA** support if training on a GPU.
+
 ## 🏋️ Training
-Train all optimizers sequentially:
+
+To train all optimizers sequentially, run the following command:
+
 ```bash
 python src/train.py
 ```
-*Configure settings in `config.py`:*
+
+You can configure your training settings in `config.py`:
+
 ```python
-epochs = 100       # Total training epochs
+epochs = 15       # Total training epochs
 batch_size = 64    # Input batch size
 dataset = "cifar10" # Options: "cifar10" or "mnist"
 ```
 
+**Note:** You can resume training from the last checkpoint by setting `config.resume = True`.
+
 ## 📂 Repository Structure
+
 ```
 ├── src/
 │   ├── train.py       # Main training script
 │   ├── models.py      # Generator/Discriminator architectures
 │   ├── utils.py       # Training utilities
-│   ├── config.py      # Hyperparameters
-│   └── data.py        # Dataset loader
+│   ├── config.py      # Hyperparameters and settings
+│   └── data.py        # Dataset loader and transformations
 ├── outputs/
-│   ├── samples/       # Generated images
-│   ├── checkpoints/   # Training snapshots
-└── └── metrics/       # FID scores & loss curves
+│   ├── samples/       # Generated images from the GAN
+│   ├── checkpoints/   # Training checkpoints (for resuming)
+└── └── metrics/       # FID scores, loss curves, and other metrics
 ```
 
 ## 🔍 Key Findings
-1. **Lookahead** achieved the lowest FID score (22.8), demonstrating superior convergence.
-2. **Adam** provided the best balance between speed and stability.
-3. **SGD** required more epochs but produced diverse samples.
 
-## 🤝 Contributing
-Contributions are welcome! Please open an issue or PR for:
-- New optimizer implementations
-- Additional datasets
-- Improved metric tracking
+1. **Lookahead** demonstrated superior convergence, resulting in the lowest **FID score** (22.8) and the **most stable training** among all optimizers.
+2. **Adam** remains the most **balanced optimizer**, offering good performance in terms of speed and stability.
+3. **SGD with momentum** showed the **slowest convergence**, requiring more epochs to reach a reasonable loss but producing **diverse and high-quality samples**.
+4. **RMSprop** provided a **moderate trade-off** between stability and speed.
+
+## 📝 Optimizer Learning Rates
+
+For consistency, the following learning rates were used across the optimizers:
+
+* **Adam, Lookahead (with Adam)**: `0.0002`
+* **RMSprop**: `0.00005`
+* **SGD with momentum**: `0.00005` (due to instability at higher learning rates)
+
+### Why Different Learning Rates?
+
+* **Adam** and **Lookahead** perform best with a learning rate of `0.0002`.
+* **SGD with momentum** is more sensitive to learning rates and requires a **lower rate** (`0.00005`) for stable training.
+* **RMSprop** benefits from a slightly lower learning rate (`0.00005`) to prevent instability during training.
 

@@ -30,8 +30,8 @@ def train_gan(optimizer_name, resume=False):
     # Optimizer setup
     optimizers = {
         'Adam': (optim.Adam, {'lr': config.lr_G, 'betas': (0.5, 0.999)}),
-        'RMSprop': (optim.RMSprop, {'lr': config.lr_G}),
-        'SGD': (optim.SGD, {'lr': config.lr_G, 'momentum': 0.9}),
+        'RMSprop': (optim.RMSprop, {'lr': config.lr_G}),# LR should be 0.00005
+        'SGD': (optim.SGD, {'lr': config.lr_G, 'momentum': 0.9}), # LR should be 0.00005
         'Lookahead': (optim.Adam, {'lr': config.lr_G, 'betas': (0.5, 0.999)})
     }
     

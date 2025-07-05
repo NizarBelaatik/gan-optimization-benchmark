@@ -20,7 +20,7 @@ class Config:
     sample_dir = "samples"
     dataset = "cifar10"  # or "mnist" 
 
-    base_dir = Path("outputs2")
+    base_dir = Path("outputs3")
     dirs = {
         'models': base_dir/"models",
         'samples': base_dir/"samples",
