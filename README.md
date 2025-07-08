@@ -41,7 +41,7 @@ cd gan-optimization-benchmark
 pip install -r requirements.txt
 ```
 
-Ensure that you have **Python 3.x** installed along with **CUDA** support if training on a GPU.
+Ensure that you have **Python 3.9** installed along with **CUDA** support if training on a GPU.
 
 ## 🏋️ Training
 
