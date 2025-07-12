@@ -15,8 +15,6 @@ from config import config
 from data import get_dataloader
 from utils import save_all_samples
 
-
-
 def train_gan(optimizer_name, resume=False):
     """Train GAN with specified optimizer"""
     # Initialize
@@ -30,8 +28,8 @@ def train_gan(optimizer_name, resume=False):
     # Optimizer setup
     optimizers = {
         'Adam': (optim.Adam, {'lr': config.lr_G, 'betas': (0.5, 0.999)}),
-        'RMSprop': (optim.RMSprop, {'lr': config.lr_G}),# LR should be 0.00005
-        'SGD': (optim.SGD, {'lr': config.lr_G, 'momentum': 0.9}), # LR should be 0.00005
+        'RMSprop': (optim.RMSprop, {'lr': config.lr_G}),
+        'SGD': (optim.SGD, {'lr': config.lr_G, 'momentum': 0.9}),
         'Lookahead': (optim.Adam, {'lr': config.lr_G, 'betas': (0.5, 0.999)})
     }
     
@@ -44,7 +42,7 @@ def train_gan(optimizer_name, resume=False):
 
     # Resume logic
     start_epoch = 0
-    losses = {'G_losses': [], 'D_losses': []}
+    losses = {'G_losses': [], 'D_losses': [], 'iter_count': 0}
     
     if resume:
         checkpoint = load_checkpoint(optimizer_name)
@@ -54,17 +52,14 @@ def train_gan(optimizer_name, resume=False):
             D.load_state_dict(checkpoint['D_state_dict'])
             opt_G.load_state_dict(checkpoint['opt_G_state_dict'])
             opt_D.load_state_dict(checkpoint['opt_D_state_dict'])
-            losses = {
-                'G_losses': checkpoint['G_losses'], 
-                'D_losses': checkpoint['D_losses']
-            }
+            losses = checkpoint['losses']
 
     # Training loop
     fixed_noise = torch.randn(64, config.latent_dim, 1, 1, device=device)
     try:
-
         for epoch in range(start_epoch, config.epochs):
-            for i, (real_imgs, _) in enumerate(dataloader):
+            for batch_idx, (real_imgs, _) in enumerate(dataloader):
+
                 real_imgs = real_imgs.to(device)
                 batch_size = real_imgs.size(0)
                 
@@ -88,39 +83,42 @@ def train_gan(optimizer_name, resume=False):
                 d_loss.backward()
                 opt_D.step()
                 
+                # Store discriminator loss for every batch
+                losses['D_losses'].append(d_loss.item())
+                
                 # --- Generator Update ---
-                if i % config.n_critic == 0:
+                # Only update generator every n_critic steps
+                if losses['iter_count'] % config.n_critic == 0:
                     G.zero_grad()
+                    noise = torch.randn(batch_size, config.latent_dim, 1, 1, device=device)
                     gen_pred = D(G(noise))
                     g_loss = -gen_pred.mean()
                     g_loss.backward()
                     opt_G.step()
                     
+                    # Store generator loss only when it updates
                     losses['G_losses'].append(g_loss.item())
                 
-                losses['D_losses'].append(d_loss.item())
+                losses['iter_count'] += 1
 
-                # --- Epoch End Processing ---
-                # Save samples
-                batch_idx = i
+                # --- Save samples ---
+                #if batch_idx % config.sample_interval == 0:
+                #    save_all_samples(G, fixed_noise, optimizer_name, epoch, batch_idx)
                 if batch_idx % config.sample_interval == 0:
-                    save_all_samples(G, fixed_noise, optimizer_name, epoch, batch_idx)
-                
-                # Save checkpoint
-                if epoch % config.checkpoint_interval == 0:
-                    save_checkpoint(epoch, G, D, opt_G, opt_D, optimizer_name, losses)
+                    noise = torch.randn(config.batch_size, config.latent_dim, 1, 1, device=device)
+                    save_samples(G, noise, optimizer_name, epoch, batch_idx)
+                # Print progress
+                print(f"[{optimizer_name}] Epoch {epoch+1}/{config.epochs} | Batch {batch_idx}/{len(dataloader)} | "
+                      f"G Loss: {g_loss.item() if 'g_loss' in locals() else 'N/A':.4f} | "
+                      f"D Loss: {d_loss.item():.4f} | Iter: {losses['iter_count']}")
 
-            #if epoch % config.sample_interval == 0:save_samples(G, fixed_noise, optimizer_name, epoch)
-            
-            # Save checkpoint
-            #save_checkpoint(epoch, G, D, opt_G, opt_D, optimizer_name, losses)
-            
-            print(f"[{optimizer_name}] Epoch {epoch+1}/{config.epochs} | "
-                f"G Loss: {g_loss.item():.4f} | D Loss: {d_loss.item():.4f}")
+            # Save checkpoint at end of epoch
+            if epoch % config.checkpoint_interval == 0:
+                save_checkpoint(epoch, G, D, opt_G, opt_D, optimizer_name, losses)
+                
     except KeyboardInterrupt:
         print("\nInterrupt detected - saving checkpoint...")
-        save_checkpoint(epoch, G, D, opt_G, opt_D, 
-                      optimizer_name, losses)
+        save_checkpoint(epoch, G, D, opt_G, opt_D, optimizer_name, losses)
         return losses
     
     # Final save
@@ -138,6 +136,10 @@ if __name__ == "__main__":
     if "cuda" in config.device and not torch.cuda.is_available():
         print("WARNING: CUDA not available, falling back to CPU")
         config.device = "cpu"
+        print("Device is using CPU")
+    else:
+        print("Device is using Cuda (GPU)")
+        
     print(f"Auto-resume: {config.resume}")
     # Train with all optimizers
     for optimizer in ['Adam', 'RMSprop', 'SGD', 'Lookahead']:

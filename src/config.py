@@ -4,8 +4,8 @@ import os
 import glob
 
 class Config:
-    version = "1.0"  # Track code versions
-    git_hash = os.getenv("GIT_HASH", "dev")  # For reproducibility
+    version = "1.2"
+    git_hash = os.getenv("GIT_HASH", "dev")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     latent_dim = 100
@@ -13,29 +13,24 @@ class Config:
     epochs = 15
     lr_G = 0.0002
     lr_D = 0.0002
-    gp_weight = 10  # Gradient penalty weight
-    n_critic = 5    # Number of D updates per G update
+    gp_weight = 10
+    n_critic = 5
     sample_interval = 5
     checkpoint_interval = 5
     sample_dir = "samples"
-    dataset = "cifar10"  # or "mnist" 
-
-    base_dir = Path("outputs3")
+    dataset = "cifar10"
+    resume=False
+    base_dir = Path("outputs")
     dirs = {
         'models': base_dir/"models",
         'samples': base_dir/"samples",
         'checkpoints': base_dir/"checkpoints", 
         'metrics': base_dir/"metrics",
-        'logs': base_dir/"logs",
-        'real_images':base_dir/"real_images"
+        'results': base_dir/"results",
     }
     
-    @property
-    def resume2(self):
-        """Check for ANY optimizer's checkpoint"""
-        checkpoint_path = os.path.join(self.dirs['checkpoints'], "*_checkpoint.pth")
-        return len(glob.glob(checkpoint_path)) > 0
     
+
     @property
     def resume(self):
         checkpoint_dir = self.dirs['checkpoints']
