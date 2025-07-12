@@ -1,6 +1,5 @@
 import torch
 import torch.optim as optim
-from torchvision.utils import save_image
 import os
 from pathlib import Path
 from models import Generator, Discriminator,Lookahead
@@ -13,7 +12,6 @@ from utils import (
 )
 from config import config
 from data import get_dataloader
-from utils import save_all_samples
 
 def train_gan(optimizer_name, resume=False):
     """Train GAN with specified optimizer"""
@@ -139,7 +137,7 @@ if __name__ == "__main__":
         print("Device is using CPU")
     else:
         print("Device is using Cuda (GPU)")
-        
+
     print(f"Auto-resume: {config.resume}")
     # Train with all optimizers
     for optimizer in ['Adam', 'RMSprop', 'SGD', 'Lookahead']:
